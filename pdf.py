@@ -3,10 +3,10 @@ import PyPDF2  # pip install PyPDF2
 # write as .txt file
 def PDFtotxt(pdfFile):
     f = open(pdfFile, 'rb')
+    a = open('txt.txt', 'a')
     pdfRead = PyPDF2.PdfFileReader(f)
     for i in range(pdfRead.getNumPages()):
         pagePDF = pdfRead.getPage(i)
-        a = open('txt.txt', 'a')
         a.write(pagePDF.extractText())
     f.close()
     a.close()
@@ -21,3 +21,4 @@ def PDFtoString(pdfFile):
         pagePDF = pdfRead.getPage(i)
         a = a + pagePDF.extractText()
     f.close()
+    return a
