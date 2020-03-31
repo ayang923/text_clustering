@@ -7,10 +7,12 @@ from pprint import pprint
 from nltk.corpus import stopwords
 import nltk.tokenize as tk
 from nltk.stem import WordNetLemmatizer
-from gensim.models import Word2Vec, Sent2Vec
+from gensim.models import Word2Vec
 
 import logging
 import sys
+
+from encoder import infersent as inf
 
 fmt = "[%(filename)s:%(lineno)s - %(funcName)s()] %(message)s"
 logging.basicConfig(stream=sys.stdout, level=logging.INFO, format=fmt)
@@ -59,14 +61,16 @@ def get_mean_vector(word2vec_model, words):
 def wordvec_feature_extraction(wordsList):
     model = Word2Vec(wordsList, min_count=1)
     vectors = model[model.wv.vocab]
-    logger.info(vectors)
+    logger.debug(vectors)
     
     return model, vectors
 
 def sentvec_feature_extraction(wordsList):
     model = Sent2Vec(wordsList, size=100, min_count=1)
 
-def kmeans(wordvec_model, vectors, sentences, wordsList, k):
+def kmeans(sentences, wordsList, k):
+    wordvec_model, vectors = wordvec_feature_extraction(wordsList)
+    
     kmeansmodel = KMeans(n_clusters=k, init='k-means++', max_iter=100, n_init=1)
     kmeansmodel.fit(vectors)
     
@@ -82,17 +86,33 @@ def kmeans(wordvec_model, vectors, sentences, wordsList, k):
     predictions.sort(key=lambda tup: (tup[1], tup[0]))
     logger.info(predictions)
     return predictions
+
+def infersent_embedding(wordsList, sentences):
+    model = inf.infersent_train(sentences)
+    
+    embedding = model.encode(sentences)
+    logger.info(embedding)
+    
+    kmeansmodel = KMeans(n_clusters=10, init='k-means++', max_iter=100, n_init=1)
+    kmeansmodel.fit(embedding)
+    
+    logger.info(model.encode(["George Washington (February 22, 1732[b] – December 14, 1799) was an American political leader, military general, statesman, and Founding Father who served as the first president of the United States from 1789 to 1797."]))
+    
+    predictions = [(i, kmeansmodel.predict(model.encode([sentences[i]]))[0]) for i in range(len(sentences))]
+    #predictions.sort(key=lambda tup: (tup[1], tup[0]))
+    
+    logger.info(predictions)
     
 def main():
+    
     #opens test text
     with open('test.txt', 'r') as file:
         testtxt = file.read().replace("\n", "")
 
     sentences, wordsList = text_preprocessing(testtxt)
+    infersent_embedding(wordsList, sentences)
     
-    extraction_model, vectors = wordvec_feature_extraction(wordsList)
-    
-    predictions = kmeans(extraction_model, vectors, sentences, wordsList, 10)
+    predictions = kmeans(sentences, wordsList, 10)
     
     with open('result.txt', 'w') as file:
         current = 0
