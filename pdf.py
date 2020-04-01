@@ -3,7 +3,7 @@ import PyPDF2  # pip install PyPDF2
 # write as .txt file
 def PDFtotxt(pdfFile):
     f = open(pdfFile, 'rb')
-    a = open('txt.txt', 'a')
+    a = open('txt.txt', 'w')
     pdfRead = PyPDF2.PdfFileReader(f)
     for i in range(pdfRead.getNumPages()):
         pagePDF = pdfRead.getPage(i)
